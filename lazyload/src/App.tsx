@@ -1,56 +1,62 @@
 import { useEffect, useRef, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 interface Products{
 id:number,
 title:string,
 }
+interface Response{
+limit:number,
+skip:number,
+total:number,
+}
 
 function App() {
   const [data, setData] = useState<Products[]>([]);
   const [skip, setSkip] = useState(0);
-let counter = 1;
   const listInnerRef = useRef<HTMLDivElement>(null);
+  // const [response, setResponse] = useState<Response[]>([]);
   
   const fetchData = async () =>{
     try{
       const getData =    await fetch(`https://dummyjson.com/products?limit=10&skip=${skip}`);
       const response = await getData.json();
       console.log(response,"response")
+      // setResponse(response);
       setData((prev) => [...prev, ...response.products]);
     }
     catch(error){
       console.log(error);
     }
-   
   }
   useEffect(() => {
+    console.log(skip, "skip");
     fetchData();
   },[skip])
 
 
-  const handleScroll = (e:any) => {
+  const handleScroll = async (e: any) => {
     e.preventDefault();
     if (listInnerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = listInnerRef.current;
       const isNearBottom = scrollTop + clientHeight >= scrollHeight;
-      console.log(isNearBottom, "isNearBottom");
-      console.log(scrollTop,"scrollTop");
-      console.log(scrollHeight,"scrollHeight");
-      console.log(clientHeight,"clientHeight");
-      
+  
       if (isNearBottom) {
-        console.log(skip,"Reached bottom");
-      //   counter++;
-
-      //   // DO SOMETHING HERE
-        setSkip(skip + 10);
+        try {
+          // Fetch new data
+          const getData = await fetch(`https://dummyjson.com/products?limit=10&skip=${skip}`);
+          const response = await getData.json();
+          console.log(response, "response");
+          // setData((prev) => [...prev, ...response.products]);
+  
+          // Update skip value
+          setSkip(response.limit + 10);
+        } catch (error) {
+          console.log(error);
+        }
       }
     }
   }
-
 
   
 
@@ -58,12 +64,8 @@ let counter = 1;
     const listInnerElement = listInnerRef.current;
 
     if (listInnerElement) {
+      console.log(listInnerElement, "listInnerElement");
       listInnerElement.addEventListener("scroll", handleScroll);
-
-      // Clean-up
-      return () => {
-        listInnerElement.removeEventListener("scroll", handleScroll);
-      };
     }
   }, []);
 
@@ -91,6 +93,7 @@ let counter = 1;
         <button onClick={() => setSkip(skip + 10)}>Load More</button>
       </div>
       </div>
+      <div className='spinner'></div>
 
     </>
   )
